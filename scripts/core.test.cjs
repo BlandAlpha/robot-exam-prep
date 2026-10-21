@@ -2,6 +2,7 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
+const vm=require('node:vm');
 const C=require('../core.js');
 const B=JSON.parse(fs.readFileSync(path.join(__dirname,'../bank.json'),'utf8'));
 const Q=B.questions, MAP=Object.fromEntries(Q.map(q=>[q.id,q]));
@@ -43,3 +44,17 @@ test('reloading exam history recalculates scores rather than trusting imported n
   const n=C.normalize(s,Q);assert.equal(n.history[0].score,25);
 });
 test('shuffle preserves set and does not mutate the input',()=>{const a=[1,2,3,4],b=C.shuffle(a,()=>.1);assert.deepEqual(a,[1,2,3,4]);assert.deepEqual([...b].sort(),a);assert.notDeepEqual(b,a);});
+test('all 600 questions have substantive explanations; official answer keys remain unchanged',()=>{
+  const context={window:{}};
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../explanations.js'),'utf8'),context);
+  const notes=context.window.QUESTION_EXPLANATIONS;
+  assert.equal(Object.keys(notes).length,600);
+  for(const q of Q){assert.ok(notes[q.id]);assert.ok(notes[q.id].text.length>=30,q.id);assert.ok(!notes[q.id].text.includes('解析正在更新'));}
+  assert.ok(notes.s81.text.includes('500r/min'));
+  assert.ok(notes.s128.text.includes('28'));
+  assert.ok(notes.j238.text.includes('过拟合'));
+  assert.equal(MAP.s56.answer,'C');
+});
+test('module sorting preference survives a backup round trip',()=>{
+  const s=C.emptyState();s.settings.topicSort='count';assert.equal(C.normalize(JSON.parse(JSON.stringify(s)),Q).settings.topicSort,'count');
+});

@@ -75,6 +75,7 @@
     if(Array.isArray(input.history)) out.history=input.history.filter(h=>h&&typeof h.id==='string'&&Array.isArray(h.ids)&&h.ids.every(valid)&&h.ids.length&&h.answers&&typeof h.answers==='object'&&Number.isFinite(h.submitted)&&h.ids.some(id=>map[id].type==='single')&&h.ids.some(id=>map[id].type==='judge')).slice(0,20).map(h=>score({...h,deadline:h.submitted},map,h.submitted));
     if(['light','dark','auto'].includes(input.settings?.theme)) out.settings.theme=input.settings.theme;
     out.settings.large=!!input.settings?.large;
+    if(['gain','count','original'].includes(input.settings?.topicSort)) out.settings.topicSort=input.settings.topicSort;
     return out;
   }
   function merge(current, imported, questions) {
